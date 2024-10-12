@@ -1,0 +1,38 @@
+{
+    "name": "alkhatibdev/logrotation",
+    "description": "Laravel package for easy log rotation",
+    "keywords": [
+        "laravel",
+        "log", "logrotation",
+        "rotate", "rotate"
+    ],
+    "homepage": "https://github.com/alkhatibdev/logrotation",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Alkhatib Hamad",
+            "email": "me@alkhatib.dev",
+            "homepage": "https://github.com/alkhatibdev",
+            "role": "Developer"
+        }
+    ],
+    "type": "package",
+    "minimum-stability": "dev",
+    "version": "1.0.0",
+    "autoload": {
+        "psr-4": {
+            "AlkhatibDev\\LogRotation\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "AlkhatibDev\\LogRotation\\Providers\\LogRotationServiceProvider"
+            ],
+            "aliases": {
+                "LogRotator": "AlkhatibDev\\LogRotation\\LogRotator"
+            }
+
+        }
+    }
+}
