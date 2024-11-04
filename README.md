@@ -74,8 +74,10 @@ In case you want to change the default log location or customize the log retenti
 ```php
 use AlkhatibDev\LogRotation\LogRotator;
 
-$logRotator = new LogRotator(storage_path('logs/custom.log'));
-$logRotator->rotate();
+$logRotator = new LogRotator();
+$logRotator
+    ->setLogFile(storage_path('logs/custom.log')) // Set the log file path to rotate
+    ->rotate();
 ```
 
 ## Support
