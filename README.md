@@ -48,28 +48,19 @@ protected function schedule(Schedule $schedule)
     })->monthly();
 }
 ```
-For **Laravel 11.x**, You can create scheduled command on `routes/console.php` file:
+For **Laravel 11.x**, You can create a scheduled command on `routes/console.php` file:
 ```php
 Artisan::command('logrotation:rotate', function () {
     app('logrotator')->rotate();
 })->monthly();
 ```
 
-This will ensure that logs are rotated and older logs are deleted automatically at the beginning of every month.
+This will ensure that logs are rotated and that older logs are automatically deleted at the beginning of every month.
 
-## Manual Log Rotation
-
-You can also trigger log rotation manually by running:
-
-```bash
-php artisan schedule:run
-```
-
-This will immediately check and rotate logs if necessary.
 
 ## Advanced Customization
 
-In case you want to change the default log location or customize the log retention behavior, you can extend the `LogRotator` class and override its methods. By default, the package manages the `storage/logs/laravel.log` file, but you can pass a custom log file path when initializing the class:
+If you want to change the default log location or customize the log retention behavior, you can extend the `LogRotator` class and override its methods. By default, the package manages the `storage/logs/laravel.log` file, but you can pass a custom log file path when initializing the class:
 
 ```php
 use AlkhatibDev\LogRotation\LogRotator;
