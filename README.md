@@ -22,9 +22,13 @@ Install the package via Composer:
 composer require alkhatibdev/logrotation
 ```
 
-## Configuration
+## Configuration & Advanced Customization
 
-To customize the log rotation settings, you can set the following values in your **`.env` file**:
+You can configure the log rotation behavior either via your .env file or programmatically using the LogRotator class.
+
+### Using .env file
+
+Set the following variables in your .env file:
 
 ```env
 # Number of months to retain logs (default: 12)
@@ -46,6 +50,32 @@ LOG_ROTATION_COMPRESS=true
 ```bash
 php artisan vendor:publish --tag=logrotation
 ```
+
+### Programmatic Customization
+
+You can fully customize log rotation by using the `LogRotator` class:
+
+```php
+use AlkhatibDev\LogRotation\LogRotator;
+
+LogRotator::make()
+    // Set a custom log file path (default: storage/logs/laravel.log)
+    ->setLogFile(storage_path('logs/custom.log'))
+    
+    // Set the maximum number of months to retain logs (default: 12)
+    ->setMaxMonths(12)
+    
+    // Set the maximum file size in KB for size-based rotation (optional) (default: null, no size-based rotation)
+    ->setMaxSize(10240) // 10 MB
+    
+    // Enable or disable compression for archived logs (.gz) (default: true)
+    ->setCompression(true)
+    
+    // Perform the rotation immediately
+    ->rotate();
+```
+
+This merged approach allows you to **configure the package using `.env` for most cases** or **fine-tune behavior programmatically** when needed.
 
 ## Usage
 
@@ -108,23 +138,6 @@ php artisan logrotation:rotate
 
 This will check the logs and rotate them immediately if needed (time or size-based).
  -->
-
-## Advanced Customization
-
-You can fully customize the log rotation behavior by extending or configuring the `LogRotator` class. This allows you to change the log file location, retention period, maximum file size, and compression settings.
-
-```php
-use AlkhatibDev\LogRotation\LogRotator;
-
-LogRotator::make()
-    ->setLogFile(storage_path('logs/custom.log'))
-    ->setMaxMonths(12)
-    ->setMaxSize(10240)
-    ->setCompression(true)
-    ->rotate();
-```
-
-The package manages both `monthly` and `size` rotation automatically.
 
 ## Support
 
