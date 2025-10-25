@@ -78,7 +78,7 @@ protected function schedule(Schedule $schedule)
 
 ### Monthly Log Archives
 
-* The rotation creates a **timestamped archive** for the current file:
+The rotation creates a **timestamped archive** for the current file:
 
 ```
 file-YYYY-MM-monthly.log
@@ -89,14 +89,14 @@ file-YYYY-MM-monthly.log.gz (if compression is enabled)
 
 The package now supports automatic rotation **when the log file exceeds a specified size**. This is useful for high-traffic applications where a single month’s log may grow too large.
 
-* The rotation creates a **timestamped archive** for the current file:
+The rotation creates a **timestamped archive** for the current file:
 
 ```
 file-YYYY-MM_DD-HH-MM-SS-size.log
 file-YYYY-MM_DD-HH-MM-SS-size.log.gz (if compression is enabled)
 ```
 
-* Size-based logs are also subject to **month-based retention** and will be deleted if their month is older than the configured `max_months`.
+Size-based logs are also subject to **month-based retention** and will be deleted if their month is older than the configured `max_months`.
 
 <!-- ## Manual Log Rotation
 
@@ -111,7 +111,7 @@ This will check the logs and rotate them immediately if needed (time or size-bas
 
 ## Advanced Customization
 
-You can override the default log file location or retention behavior by extending the `LogRotator` class:
+You can fully customize the log rotation behavior by extending or configuring the `LogRotator` class. This allows you to change the log file location, retention period, maximum file size, and compression settings.
 
 ```php
 use AlkhatibDev\LogRotation\LogRotator;
