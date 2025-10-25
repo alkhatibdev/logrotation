@@ -1,126 +1,233 @@
 <?php
-
 namespace AlkhatibDev\LogRotation;
 
 use Carbon\Carbon;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 class LogRotator
 {
-    /**
-     * The log file to rotate.
-     *
-     * @var string
-     */
-    protected $logFile;
+    protected string $logFile;
+    protected int $maxMonths;
+    protected ?int $maxSizeKb;
+    protected bool $compressArchived;
 
     /**
-     * The maximum number of months to keep.
+     * LogRotator constructor.
      *
-     * @var int
+     * @param string $logFile
      */
-    protected $maxMonths;
-
-    public function __construct()
-    { }
+    public function __construct($logFile = null)
+    {
+        $this->logFile          = $logFile ?? storage_path('logs/laravel.log');
+        $this->maxMonths        = config('logrotation.max_months', 6);
+        $this->maxSizeKb        = config('logrotation.max_size_kb', null);
+        $this->compressArchived = config('logrotation.compress_archived', false);
+    }
 
     /**
-     * Set the log file to rotate.
+     * Create a new LogRotator instance
      *
-     * @param  string  $logFile
-     * @return void
+     * @return self
      */
-    public function setLogFile($logFile): LogRotator
+    public static function make(): self
+    {
+        return new self();
+    }
+
+    /**
+     * Set the log file path
+     *
+     * @param string $logFile
+     * @return self
+     */
+    public function setLogFile(string $logFile): self
     {
         $this->logFile = $logFile;
-
         return $this;
     }
 
     /**
-     * Get the log file to rotate.
+     * Set maximum months to retain logs
      *
-     * @return string
+     * @param int $months
+     * @return self
      */
-    protected function getLogFile(): string
+    public function setMaxMonths(int $months): self
     {
-        if ($this->logFile === null) {
-            $this->logFile = storage_path('logs/laravel.log');
-        }
-
-        return $this->logFile;
-    }
-
-    /**
-     * Set the maximum number of months to keep.
-     *
-     * @param  int  $maxMonths
-     * @return void
-     */
-    public function setMaxMonths($maxMonths): LogRotator
-    {
-        $this->maxMonths = $maxMonths;
-
+        $this->maxMonths = $months;
         return $this;
     }
 
     /**
-     * Get the maximum number of months to keep.
+     * Set maximum size in KB before rotation
+     * If null, no size based rotation will be performed
      *
-     * @return int
+     * @param int $sizeKb
+     * @return self
      */
-    protected function getMaxMonths(): int
+    public function setMaxSize(?int $sizeKb): self
     {
-        if ($this->maxMonths === null) {
-            $this->maxMonths = config('logrotation.max_months', 6);
-        }
-
-        return $this->maxMonths;
+        $this->maxSizeKb = $sizeKb;
+        return $this;
     }
 
     /**
-     * Rotate the log file.
+     * Enable or disable compression for archived logs
+     */
+    public function setCompression(bool $compress): self
+    {
+        $this->compressArchived = $compress;
+        return $this;
+    }
+
+    /**
+     * Rotate the log file
      *
      * @return void
      */
     public function rotate(): void
     {
-        $logFile = $this->getLogFile();
+        if (! File::exists($this->logFile)) {
+            return;
+        }
 
-        if (file_exists($logFile)) {
-            // Get the creation month that the rotated log file will be created in.
-            $fileCreationMonth = Carbon::now()->subMonth()->format('Y-m');
-            $newLogFile = dirname($logFile) . '/' . $fileCreationMonth . '-' . basename($logFile);
+        $this->rotateByTimeAndArchive();
 
-            // Rotate the log if it's not already rotated
-            if (! file_exists($newLogFile)) {
-                rename($logFile, $newLogFile);
+        if ($this->maxSizeKb !== null && $this->shouldRotateBySize()) {
+            $this->rotateBySizeAndArchive();
+        }
 
-                // Create a new empty log file
-                file_put_contents($logFile, '');
+        $this->deleteOldLogArchives();
+    }
 
-                $this->deleteOldLogs();
+    /**
+     * Check if file size exceeds the threshold
+     */
+    protected function shouldRotateBySize(): bool
+    {
+        $fileSizeKb = File::size($this->logFile) / 1024;
+        return $fileSizeKb >= $this->maxSizeKb;
+    }
+
+    /**
+     * Rotate log by size and create archive
+     */
+    protected function rotateBySizeAndArchive(): void
+    {
+        try {
+            $timestamp   = Carbon::now()->format('Y-m_d-H-i-s');
+            $archivePath = $this->getArchivePath($timestamp, 'size');
+
+            File::copy($this->logFile, $archivePath);
+
+            if ($this->compressArchived) {
+                $this->compressFile($archivePath);
             }
+
+            File::put($this->logFile, '');
+
+        } catch (\Exception $e) {
+            Log::error("Failed to rotate log by size: {$e->getMessage()}", [
+                'file' => $this->logFile,
+            ]);
         }
     }
 
     /**
-     * Delete old logs that older than max months value.
+     * Rotate log by time and create archive
+     */
+    protected function rotateByTimeAndArchive(): void
+    {
+        try {
+            $timestamp   = Carbon::now()->subMonth()->format('Y-m');
+            $archivePath = $this->getArchivePath($timestamp, 'monthly');
+
+            if (File::exists($archivePath) || File::exists($archivePath . '.gz')) {
+                return;
+            }
+
+            File::copy($this->logFile, $archivePath);
+
+            if ($this->compressArchived) {
+                $this->compressFile($archivePath);
+            }
+
+            File::put($this->logFile, '');
+
+        } catch (\Exception $e) {
+            Log::error("Failed to rotate log by time: {$e->getMessage()}", [
+                'file' => $this->logFile,
+            ]);
+        }
+    }
+
+    /**
+     * Generate archive file path
+     */
+    protected function getArchivePath(string $timestamp, string $type): string
+    {
+        $logDirectory = dirname($this->logFile);
+        $logBaseName  = pathinfo($this->logFile, PATHINFO_FILENAME);
+
+        return "{$logDirectory}/{$logBaseName}-{$timestamp}-{$type}.log";
+    }
+
+    /**
+     * Compress a file using gzip
+     *
+     * @param string $filePath
+     * @return void
+     */
+    protected function compressFile(string $filePath): void
+    {
+        if (! function_exists('gzencode')) {
+            return;
+        }
+
+        try {
+            $content    = File::get($filePath);
+            $compressed = gzencode($content, 9);
+
+            File::put($filePath . '.gz', $compressed);
+            File::delete($filePath);
+
+        } catch (\Exception $e) {
+            Log::error("Failed to compress log file: {$e->getMessage()}", [
+                'file' => $filePath,
+            ]);
+        }
+    }
+
+    /**
+     * Delete old logs
      *
      * @return void
      */
-    protected function deleteOldLogs(): void
+    protected function deleteOldLogArchives(): void
     {
-        // Get all rotated logs
-        $logFiles = glob(dirname($this->getLogFile()) . '/20*');
+        $keepMonths = $this->maxMonths;
+        $cutoffDate = now()->subMonths($keepMonths)->startOfMonth();
 
-        // Sort logs by date (newest first)
-        usort($logFiles, function($a, $b) {
-            return strcmp($b, $a);
-        });
+        $files       = File::files(File::dirname($this->logFile));
+        $logBaseName = pathinfo($this->logFile, PATHINFO_FILENAME);
 
-        // Keep only the latest $maxMonths logs
-        foreach (array_slice($logFiles, $this->getMaxMonths()) as $oldLog) {
-            unlink($oldLog);
+        foreach ($files as $file) {
+            try {
+                $filename = $file->getFilename();
+                if (preg_match('/' . $logBaseName . '-(\d{4})-(\d{2}).*-(monthly|size)\.log(\.gz)?$/', $filename, $matches)) {
+                    [$full, $year, $month] = $matches;
+                    $fileDate              = Carbon::createFromDate($year, $month, 1)->startOfMonth();
+
+                    if ($fileDate->lt($cutoffDate)) {
+                        File::delete($file->getRealPath());
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error("Log rotation failed to delete old log archive: {$e->getMessage()}", [
+                    'file' => $file,
+                ]);
+            }
         }
     }
 }
