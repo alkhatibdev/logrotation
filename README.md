@@ -4,12 +4,12 @@
 [![Total Downloads](https://img.shields.io/packagist/dt/alkhatibdev/logrotation.svg?style=flat-square)](https://packagist.org/packages/alkhatibdev/logrotation)
 [![GitHub Issues](https://img.shields.io/github/issues/alkhatibdev/logrotation.svg?style=flat-square)](https://github.com/alkhatibdev/logrotation/issues)
 
-This package makes log file rotation easier by automatically managing and organizing Laravel logs based on **time and file size**, retaining only the most recent logs (e.g., 6 months) and discarding older logs. This solution is ideal for applications that generate high volumes of logs, providing efficient log management and preventing excessive disk usage over time.
+This package makes log file rotation easier by automatically managing and organizing Laravel logs based on **time and file size**, retaining only the most recent logs (e.g., 12 months) and discarding older logs. This solution is ideal for applications that generate high volumes of logs, providing efficient log management and preventing excessive disk usage over time.
 
 ## Benefits
 
 - Rotates your log files **based on date** (monthly) or **file size** (size-based rotation).
-- Retains logs for a configurable number of months (default: 6 months), which can be modified through the configuration file.
+- Retains logs for a configurable number of months (default: 12 months), which can be modified through the configuration file.
 - Automatically deletes old logs after the configured retention period, freeing up disk space.
 - Supports both **compressed (`.gz`)** and uncompressed log files.
 - Helps prevent large log files from consuming excessive disk space during high-traffic periods.

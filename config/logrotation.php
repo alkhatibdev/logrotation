@@ -8,7 +8,7 @@ return [
      * This value determines how many months of log files should be retained.
      * Logs older than this will be automatically deleted during rotation.
      */
-    'max_months' => env('LOG_ROTATION_MAX_MONTHS', 6),
+    'max_months' => env('LOG_ROTATION_MAX_MONTHS', 12),
 
     /*
     |--------------------------------------------------------------------------
@@ -30,6 +30,6 @@ return [
      * When enabled, archived log files will be compressed using gzip to save
      * disk space. The original log file will be replaced with a .gz version.
      */
-    'compress_archived' => env('LOG_ROTATION_COMPRESS', false),
+    'compress_archived' => env('LOG_ROTATION_COMPRESS', true),
     
 ];
