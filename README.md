@@ -88,7 +88,7 @@ Artisan::command('logrotation:rotate', function () {
 })->daily();
 ```
 
-Or for **Laravel 10.x** and below, in `routes/console.php`:
+Or for **Laravel 10.x** and below, in `app/Console/Kernel.php`:
 
 ```php
 protected function schedule(Schedule $schedule)
